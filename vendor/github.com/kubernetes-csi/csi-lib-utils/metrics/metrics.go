@@ -29,6 +29,15 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/component-base/metrics"
+	"k8s.io/component-base/metrics/legacyregistry"
+	// Anonymously import the client-go metrics adapters so that client-go's
+	// rest client, work queue, and leader election metrics register themselves
+	// into legacyregistry.DefaultGatherer. Every CSIMetricsManager serves that
+	// gatherer by default (see NewCSIMetricsManagerWithOptions), so consumers
+	// get these metrics without importing anything themselves.
+	_ "k8s.io/component-base/metrics/prometheus/clientgo/leaderelection"
+	_ "k8s.io/component-base/metrics/prometheus/restclient"
+	_ "k8s.io/component-base/metrics/prometheus/workqueue"
 )
 
 const (
@@ -269,6 +278,11 @@ func NewCSIMetricsManagerWithOptions(driverName string, options ...MetricsManage
 	cmm.registerMetrics()
 	cmm.gatherers = prometheus.Gatherers{
 		cmm.GetRegistry(),
+		// Serve the client-go rest client, work queue, and leader election
+		// metrics (registered via the anonymous imports above), plus the Go
+		// runtime and process collectors that legacyregistry registers by
+		// default. Consumers no longer need to wire these up.
+		legacyregistry.DefaultGatherer,
 	}
 	return &cmm
 }

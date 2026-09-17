@@ -57,10 +57,6 @@ import (
 	"k8s.io/component-base/logs"
 	logsapi "k8s.io/component-base/logs/api/v1"
 	_ "k8s.io/component-base/logs/json/register"
-	"k8s.io/component-base/metrics/legacyregistry"
-	_ "k8s.io/component-base/metrics/prometheus/clientgo/leaderelection" // register leader election in the default legacy registry
-	_ "k8s.io/component-base/metrics/prometheus/restclient"              // register client-go REST client metrics (incl. rate limiter latency)
-	_ "k8s.io/component-base/metrics/prometheus/workqueue"               // register work queues in the default legacy registry
 
 	clientset "github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned"
 	snapshotscheme "github.com/kubernetes-csi/external-snapshotter/client/v8/clientset/versioned/scheme"
@@ -204,10 +200,6 @@ func main() {
 	}
 
 	klog.V(2).Infof("CSI driver name: %q", driverName)
-
-	// Add default legacy registry so that metrics manager serves Go runtime and process metrics.
-	// Also registers the `k8s.io/component-base/` work queue and leader election metrics we anonymously import.
-	metricsManager.WithAdditionalRegistry(legacyregistry.DefaultGatherer)
 
 	// Prepare http endpoint for metrics + leader election healthz
 	mux := http.NewServeMux()
